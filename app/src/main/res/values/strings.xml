@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">HNWeather</string>
+    <string name="search_action_bar">Refresh</string>
+
+    <!--
+        HERE ARE THE KEYS OF THE APP
+    -->
+    <string name="google_map_key">AIzaSyB8Mf0LIfwgrQeSUeYfaSihhqXP2g_kyV8</string>
+</resources>
