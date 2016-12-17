@@ -15,6 +15,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.support.v7.widget.SearchView;
+import com.hadinour.hnweather.Service.*;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -22,7 +23,6 @@ import com.google.android.gms.identity.intents.Address;
 import com.google.android.gms.location.LocationServices;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.hadinour.hnweather.Interfaces.WeatherService;
 
 import java.io.IOException;
 import java.util.List;
@@ -38,6 +38,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
     private static GoogleApiClient googleApiClient;
     private static Location lastLocation;
+    private static LocationsFinderService locationsFinderService = LocationsFinderService.retrofit.create(LocationsFinderService.class);
+    private List<City> foundCities;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +69,21 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                return false;
+                if (newText.isEmpty() == false) {
+                    Log.d("WeatherFinder", newText);
+                    locationsFinderService.cities(newText).enqueue(new Callback<Cities>() {
+                        @Override
+                        public void onResponse(Call<Cities> call, Response<Cities> response) {
+                            foundCities = response.body().getRESULTS();
+                        }
+
+                        @Override
+                        public void onFailure(Call<Cities> call, Throwable t) {
+                            Log.d("WeatherFinder", t.toString());
+                        }
+                    });
+                }
+                return true;
             }
         });
         return super.onCreateOptionsMenu(menu);
@@ -124,6 +140,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             if (addresses.size() > 0)
                 Log.d("Debug Location", addresses.get(0).getLocality() + ", " + addresses.get(0).getCountryName());
 
+        } else {
+            lastLocation = new Location(""); //set Sarajevo as default location.
+            lastLocation.setLatitude(43.84864d);
+            lastLocation.setLongitude(18.35644);
         }
     }
 
