@@ -44,22 +44,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         createGAC();
-
-        Retrofit retrofit = setupRetrofitWithBaseURL("https://api.flickr.com/services/rest/");
-
-        WeatherService wService = retrofit.create(WeatherService.class);
-        Call<String> weather = wService.getBackgroundImage();
-        weather.enqueue(new Callback<String>() {
-            @Override
-            public void onResponse(Call<String> call, Response<String> response) {
-                Log.d("Network", response.body());
-            }
-
-            @Override
-            public void onFailure(Call<String> call, Throwable t) {
-                Log.d("onFailure", t.toString());
-            }
-        });
     }
 
     @Override
@@ -152,15 +136,4 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         Log.d("WTF: ", connectionResult.toString());
     }
-
-    private Retrofit setupRetrofitWithBaseURL(String url) {
-        Gson gson = new GsonBuilder()
-                .setLenient()
-                .create();
-
-        return new Retrofit.Builder()
-                .baseUrl(url)
-                .addConverterFactory(GsonConverterFactory.create(gson))
-                .build();
     }
-}
