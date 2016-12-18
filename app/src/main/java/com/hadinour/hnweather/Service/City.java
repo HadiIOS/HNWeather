@@ -15,5 +15,17 @@ public class City {
     public String toString() {
         return name + "at " + lat + ", " + lon;
     }
+
+    public String getName() {
+        return name;
+    }
+
+    public double getLat() {
+        return lat;
+    }
+
+    public double getLon() {
+        return lon;
+    }
 }
 

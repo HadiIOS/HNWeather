@@ -2,6 +2,7 @@ package com.hadinour.hnweather;
 
 import android.*;
 import android.Manifest;
+import android.app.FragmentTransaction;
 import android.content.pm.PackageManager;
 import android.location.Geocoder;
 import android.location.Location;
@@ -25,6 +26,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -40,10 +42,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private static Location lastLocation;
     private static LocationsFinderService locationsFinderService = LocationsFinderService.retrofit.create(LocationsFinderService.class);
     private List<City> foundCities;
+    private ListViewDialog citiesList = new ListViewDialog();
+    private static final int CONTENT_VIEW_ID = 10101010;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
         createGAC();
     }
@@ -75,6 +80,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                         @Override
                         public void onResponse(Call<Cities> call, Response<Cities> response) {
                             foundCities = response.body().getRESULTS();
+                            if (citiesList.isAdded() == false) {
+                                FragmentTransaction ft = getFragmentManager().beginTransaction();
+                                ft.add(android.R.id.content, citiesList).commit();
+                                citiesList.updateAdapter(getCities(foundCities));
+//                               citiesList.show(getFragmentManager(), "citiesListTag");
+                            }
                         }
 
                         @Override
@@ -82,6 +93,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                             Log.d("WeatherFinder", t.toString());
                         }
                     });
+                } else {
+                    citiesList.setUserVisibleHint(false);
                 }
                 return true;
             }
@@ -145,6 +158,14 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             lastLocation.setLatitude(43.84864d);
             lastLocation.setLongitude(18.35644);
         }
+    }
+
+    private List<String> getCities(List<City> cities) {
+        List<String> citiesList = new ArrayList<String>();
+        for (City city: cities) {
+            citiesList.add(city.getName());
+        }
+        return citiesList;
     }
 
     @Override
