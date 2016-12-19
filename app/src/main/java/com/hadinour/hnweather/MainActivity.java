@@ -1,13 +1,13 @@
 package com.hadinour.hnweather;
 
-import android.*;
 import android.Manifest;
 import android.app.FragmentTransaction;
 import android.content.pm.PackageManager;
 import android.location.Geocoder;
 import android.location.Location;
+import android.os.Build;
+import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -16,40 +16,40 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.support.v7.widget.SearchView;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
+
 import com.hadinour.hnweather.Service.*;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.identity.intents.Address;
 import com.google.android.gms.location.LocationServices;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import okhttp3.Interceptor;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
     private static GoogleApiClient googleApiClient;
     private static Location lastLocation;
     private static LocationsFinderService locationsFinderService = LocationsFinderService.retrofit.create(LocationsFinderService.class);
     private List<City> foundCities;
-    private ListViewDialog citiesList = new ListViewDialog();
-    private static final int CONTENT_VIEW_ID = 10101010;
+    private ListViewFragment citiesList = new ListViewFragment();
+    private static final @IdRes int CONTENT_VIEW_ID = 10101010;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        View content = getLayoutInflater().inflate(R.layout.activity_main, null);
+        content.setId(CONTENT_VIEW_ID);
 
-        setContentView(R.layout.activity_main);
+        setContentView(content);
         createGAC();
     }
 
@@ -80,11 +80,17 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                         @Override
                         public void onResponse(Call<Cities> call, Response<Cities> response) {
                             foundCities = response.body().getRESULTS();
+                            ArrayList<String> cities = (ArrayList<String>) getCities(foundCities);
+                            getFragmentManager().executePendingTransactions();
                             if (citiesList.isAdded() == false) {
-                                FragmentTransaction ft = getFragmentManager().beginTransaction();
-                                ft.add(android.R.id.content, citiesList).commit();
-                                citiesList.updateAdapter(getCities(foundCities));
-//                               citiesList.show(getFragmentManager(), "citiesListTag");
+                                Bundle bundle = new Bundle();
+                                bundle.putStringArrayList("foundCities", cities);
+                                citiesList.setArguments(bundle);
+                                FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+                                fragmentTransaction.add(CONTENT_VIEW_ID, citiesList);
+                                fragmentTransaction.commit();
+                            } else if (citiesList.isAdded()){
+                                citiesList.updateAdapter(cities);
                             }
                         }
 
@@ -94,7 +100,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                         }
                     });
                 } else {
-                    citiesList.setUserVisibleHint(false);
+                    if (citiesList.isAdded()){
+                        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+                        fragmentTransaction.remove(citiesList).commit();
+                    }
                 }
                 return true;
             }
@@ -177,4 +186,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         Log.d("WTF: ", connectionResult.toString());
     }
+
+    public static int getContentViewId() {
+        return Build.VERSION.SDK_INT>=Build.VERSION_CODES.ICE_CREAM_SANDWICH ? android.R.id.content : R.id.action_bar_activity_content;
     }
+
+}
