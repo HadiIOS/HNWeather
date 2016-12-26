@@ -11,4 +11,4 @@ User should have a good user experience during using the app.
 # Acknowledgments
 This Project is for "Introducing to Mobile Programming" course by professor [Dino Keco](https://github.com/dinokeco)
 # License
-This project is licensed under the GNU GENERAL PUBLIC LICENSE - see the [LICENSE](https://github.com/HadiIOS/HNWeather/blob/master/LICENSE) file for details
+This project is licensed under the Apache License 2.0 - see the [LICENSE](https://github.com/HadiIOS/HNWeather/blob/master/LICENSE) file for details
