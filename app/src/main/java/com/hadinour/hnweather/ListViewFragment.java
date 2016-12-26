@@ -1,8 +1,5 @@
 package com.hadinour.hnweather;
 
-import android.app.AlertDialog;
-import android.app.Dialog;
-import android.app.DialogFragment;
 import android.app.Fragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,8 +7,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-
-import com.hadinour.hnweather.Service.City;
 
 import java.util.ArrayList;
 import java.util.List;

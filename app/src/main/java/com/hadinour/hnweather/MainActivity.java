@@ -17,14 +17,15 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.support.v7.widget.SearchView;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.LinearLayout;
-
-import com.hadinour.hnweather.Service.*;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
+import com.hadinour.hnweather.Service.Autocomplete.Cities;
+import com.hadinour.hnweather.Service.Autocomplete.City;
+import com.hadinour.hnweather.Service.Autocomplete.LocationsFinderService;
+import com.hadinour.hnweather.Service.Weather.ConditionResponse;
+import com.hadinour.hnweather.Service.Weather.WeatherInterface;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,6 +40,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private static GoogleApiClient googleApiClient;
     private static Location lastLocation;
     private static LocationsFinderService locationsFinderService = LocationsFinderService.retrofit.create(LocationsFinderService.class);
+    private static WeatherInterface weatherInterface = WeatherInterface.weatherRertorfit.create(WeatherInterface.class);
+
     private List<City> foundCities;
     private ListViewFragment citiesList = new ListViewFragment();
     private static final @IdRes int CONTENT_VIEW_ID = 10101010;
@@ -167,6 +170,24 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             lastLocation.setLatitude(43.84864d);
             lastLocation.setLongitude(18.35644);
         }
+        getLastLocationWeatherCondition();
+    }
+
+    private void getLastLocationWeatherCondition() {
+        String loc = "" + lastLocation.getLatitude() + "," + lastLocation.getLongitude();
+        weatherInterface.condition(loc).enqueue(new Callback<ConditionResponse>() {
+            @Override
+            public void onResponse(Call<ConditionResponse> call, Response<ConditionResponse> response) {
+                ConditionResponse conditionResponse = response.body();
+
+            }
+
+            @Override
+            public void onFailure(Call<ConditionResponse> call, Throwable t) {
+                Log.d("WeatherTag", t.toString());
+            }
+
+        });
     }
 
     private List<String> getCities(List<City> cities) {

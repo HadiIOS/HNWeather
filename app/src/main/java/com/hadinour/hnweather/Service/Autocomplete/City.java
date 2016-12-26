@@ -1,4 +1,4 @@
-package com.hadinour.hnweather.Service;
+package com.hadinour.hnweather.Service.Autocomplete;
 
 import java.util.List;
 

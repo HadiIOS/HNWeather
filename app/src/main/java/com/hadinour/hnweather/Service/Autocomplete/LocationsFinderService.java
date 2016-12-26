@@ -1,6 +1,4 @@
-package com.hadinour.hnweather.Service;
-
-import java.util.List;
+package com.hadinour.hnweather.Service.Autocomplete;
 
 import retrofit2.Call;
 import retrofit2.Retrofit;

@@ -7,7 +7,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
-import com.hadinour.hnweather.Service.City;
+import com.hadinour.hnweather.Service.Autocomplete.City;
 
 import java.util.ArrayList;
 
