@@ -1,5 +1,7 @@
 package com.hadinour.hnweather.Service.Autocomplete;
 
+import android.location.Location;
+
 import java.util.List;
 
 /**
@@ -26,6 +28,12 @@ public class City {
 
     public double getLon() {
         return lon;
+    }
+    public Location getLocation() {
+        Location location = new Location(name);
+        location.setLatitude(lat);
+        location.setLongitude(lon);
+        return location;
     }
 }
 

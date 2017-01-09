@@ -1,20 +1,16 @@
 package com.hadinour.hnweather;
 
 import android.Manifest;
-import android.app.Activity;
-import android.app.FragmentTransaction;
 import android.content.pm.PackageManager;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.location.Geocoder;
 import android.location.Location;
-import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Handler;
-import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -23,33 +19,27 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.support.v7.widget.SearchView;
 import android.view.View;
-import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.places.PlaceLikelihood;
-import com.google.android.gms.location.places.PlaceLikelihoodBuffer;
 import com.google.android.gms.location.places.Places;
 import com.hadinour.hnweather.Service.Autocomplete.Cities;
 import com.hadinour.hnweather.Service.Autocomplete.City;
 import com.hadinour.hnweather.Service.Autocomplete.LocationsFinderService;
+import com.hadinour.hnweather.Service.Weather.Condition;
 import com.hadinour.hnweather.Service.Weather.ConditionResponse;
+import com.hadinour.hnweather.Service.Weather.PlacesInterface;
 import com.hadinour.hnweather.Service.Weather.WeatherInterface;
 import com.hadinour.hnweather.Service.PlacePhotos.*;
 import com.hadinour.hnweather.Utilities.BaseUtilities;
-
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.location.places.Place;
-import com.google.android.gms.location.places.PlaceDetectionApi;
-import com.google.android.gms.location.places.PlaceLikelihood;
-import com.google.android.gms.location.places.PlaceLikelihoodBuffer;
+import com.hadinour.hnweather.Utilities.OnSwipeTouchListner;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -62,32 +52,39 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private static Location lastLocation;
     private static LocationsFinderService locationsFinderService = LocationsFinderService.retrofit.create(LocationsFinderService.class);
     private static WeatherInterface weatherInterface = WeatherInterface.weatherRertorfit.create(WeatherInterface.class);
-
+    private static PlacesInterface placesInterface = PlacesInterface.placesRetrofit.create(PlacesInterface.class);
     private static TextView tempTV;
     private static TextView lastUpdateTV;
-
+    public static SearchView searchView;
     private android.location.Address address;
     private static List<City> foundCities;
-    private ListViewFragment citiesList = new ListViewFragment();
+    private ListViewFragment listViewFragment;
     private static ConditionResponse conditionResponse;
-    private static final @IdRes int CONTENT_VIEW_ID = 10101010;
-    final String weatherTag = "Weather Tag";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        View content = getLayoutInflater().inflate(R.layout.activity_main, null);
-        content.setId(CONTENT_VIEW_ID);
-
-        setContentView(content);
+        setContentView(R.layout.activity_main);
+        listViewFragment = (ListViewFragment) getFragmentManager().findFragmentById(R.id.listViewFragment);
+        findViewById(R.id.activity_main).setOnTouchListener(new OnSwipeTouchListner(MainActivity.this){
+            public void onSwipeTop() {
+                //show something to add
+                Toast.makeText(MainActivity.this, "top", Toast.LENGTH_SHORT).show();
+            }
+            public void onSwipeBottom() {
+                //refresh data
+                Toast.makeText(MainActivity.this, "bottom", Toast.LENGTH_SHORT).show();
+            }
+        });
         createGAC();
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         MenuItem searchItem = menu.findItem(R.id.action_search);
-        final SearchView searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
+        searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
@@ -100,6 +97,14 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 return true;
             }
 
+            public void setFragment(List<City> cities){
+                listViewFragment.updateAdapter(cities);
+                if (listViewFragment.getView().getHeight() > 0) {
+                    BaseUtilities.getUtilities().setBackgroundOfView(listViewFragment.getView(), ContextCompat.getDrawable(MainActivity.this, R.color.White), MainActivity.this);
+
+                }
+            }
+
             @Override
             public boolean onQueryTextChange(String newText) {
                 if (newText.isEmpty() == false) {
@@ -108,18 +113,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                         @Override
                         public void onResponse(Call<Cities> call, Response<Cities> response) {
                             foundCities = response.body().getRESULTS();
-                            ArrayList<String> cities = (ArrayList<String>) getCities(foundCities);
-                            getFragmentManager().executePendingTransactions();
-                            if (citiesList.isAdded() == false) {
-                                Bundle bundle = new Bundle();
-                                bundle.putStringArrayList("foundCities", cities);
-                                citiesList.setArguments(bundle);
-                                FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
-                                fragmentTransaction.add(CONTENT_VIEW_ID, citiesList);
-                                fragmentTransaction.commit();
-                            } else if (citiesList.isAdded()){
-                                citiesList.updateAdapter(cities);
-                            }
+                            setFragment(foundCities);
                         }
 
                         @Override
@@ -128,10 +122,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                         }
                     });
                 } else {
-                    if (citiesList.isAdded()){
-                        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
-                        fragmentTransaction.remove(citiesList).commit();
-                    }
+                    setFragment(new ArrayList<City>());
                 }
                 return true;
             }
@@ -176,7 +167,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         }
         lastLocation = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
         if (lastLocation != null) {
-
             String lat = String.valueOf(lastLocation.getLatitude());
             String lng =String.valueOf(lastLocation.getLongitude());
             Log.d("Debug Location", "lat: " + lat + ", long: " + lng);
@@ -187,65 +177,75 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             lastLocation.setLongitude(18.35644);
         }
 
-        Geocoder gcd = new Geocoder(this, Locale.getDefault());
-        List<android.location.Address> addresses = null;
-        try {
-            addresses = gcd.getFromLocation(lastLocation.getLatitude(), lastLocation.getLongitude(), 1);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        if (addresses.size() > 0)
-            address = addresses.get(0);
-            Log.d("Debug Location", addresses.get(0).getLocality() + ", " + addresses.get(0).getCountryName());
-
-        getLastLocationWeatherCondition();
+        preGetWeatherLocation(lastLocation);
     }
 
-    private void getLastLocationWeatherCondition() {
-        String loc = "" + lastLocation.getLatitude() + "," + lastLocation.getLongitude();
+    public void preGetWeatherLocation(Location location) {
+        Geocoder gcd = new Geocoder(this, Locale.getDefault());
+        List<android.location.Address> addresses = getAdresses(0, gcd, location);
+        if (addresses.size() > 0)
+            address = addresses.get(0);
+        Log.d("Debug Location", addresses.get(0).getLocality() + ", " + addresses.get(0).getCountryName());
+
+        getWeatherForLocation(location);
+    }
+
+    public void getWeatherForLocation(Location location) {
+        final String loc = "" + location.getLatitude() + "," + location.getLongitude();
         weatherInterface.condition(loc).enqueue(new Callback<ConditionResponse>() {
             @Override
             public void onResponse(Call<ConditionResponse> call, Response<ConditionResponse> response) {
                 conditionResponse = response.body();
-                initElements();
+                initElements(loc);
             }
 
             @Override
             public void onFailure(Call<ConditionResponse> call, Throwable t) {
-                 Log.d(weatherTag, t.toString());
             }
 
         });
     }
 
-    private void initElements() {
-        placePhotosTask();
+    private void initElements(String loc) {
+        placePhotosTask(loc);
         tempTV = (TextView) findViewById(R.id.temp_textView);
         lastUpdateTV = (TextView) findViewById(R.id.lastUpdate_title);
-        tempTV.setText(conditionResponse.getCurrent_observation().getTemp_c() + "˚");
+        tempTV.setText(conditionResponse.getCurrent_observation().getFeelslike_c() + "˚");
         lastUpdateTV.setText(conditionResponse.getCurrent_observation().getObservation_time() + "\n" + getLocationName());
-
+        mobi.parchment.widget.adapterview.listview.ListView extraListView = (mobi.parchment.widget.adapterview.listview.ListView) findViewById(R.id.extraList);
+        if (extraListView.getAdapter() == null) {
+            ExtraInfoAdapter extraInfoAdapter = new ExtraInfoAdapter(MainActivity.this, R.id.extraList, new ArrayList<>(Collections.nCopies(5, conditionResponse.getCurrent_observation())));
+            extraListView.setAdapter(extraInfoAdapter);
+        } else {
+            ((ExtraInfoAdapter)extraListView.getAdapter()).refreshEvents(new ArrayList<>(Collections.nCopies(5, conditionResponse.getCurrent_observation())));
+        }
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 lastUpdateTV.setText(getLocationName());
             }
-        }, 2000);
+        }, 60000);
 
     }
 
 
-    private void placePhotosTask() {
+    private void placePhotosTask(final String location) {
 
         // Create a new AsyncTask that displays the bitmap and attribution once loaded.
         final Point size = BaseUtilities.getUtilities().getDeviceSize(this);
         final View root = findViewById(android.R.id.content);
-        final Activity that = this;
+
 
         new Thread(new Runnable() {
             @Override
             public void run() {
-                new PhotoTask(size.x * 2, size.y * 2, googleApiClient, that) {
+                String placeID = "ChIJ0Ztx7bHLWEcRPrOH3qbNLlY";
+                try {
+                    placeID = getPlaceID(location);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                new PhotoTask(size.x * 2, size.y * 2, googleApiClient, MainActivity.this) {
                     @Override
                     protected void onPreExecute() {
                         // Display a temporary image to show while bitmap is loading.
@@ -257,15 +257,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                             // Photo has been loaded, display it.
 //                    mImageView.setImageBitmap(attributedPhoto.bitmap);
                             Drawable d = new BitmapDrawable(getResources(), attributedPhoto.bitmap);
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                                root.setBackground(d);
+                            BaseUtilities.getUtilities().setBackgroundOfView(root, d, getBaseContext());
 
-                            } else  {
-                                root.setBackgroundDrawable(d);
-                            }
                         }
                     }
-                }.execute(getPlaceID());
+                }.execute(placeID);
 
             }
         }).start();
@@ -281,7 +277,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     private String getLocationName() {
         String subCountry = address.getLocality() + ", ";
-        if (subCountry.length() < 3)
+        if (subCountry.equals("null, "))
             subCountry = address.getFeatureName() + ", ";
         if (subCountry.length() < 3)
             subCountry = "";
@@ -298,24 +294,40 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         Log.d("WTF: ", connectionResult.toString());
     }
     
-    private String getPlaceID() {
+    private String getPlaceID(String location) throws IOException {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return "ChIJ0Ztx7bHLWEcRPrOH3qbNLlY";
 
         }
 
-        final String[] placeId = {"ChIJ0Ztx7bHLWEcRPrOH3qbNLlY"};
-
-
-        PendingResult<PlaceLikelihoodBuffer> pResult = Places.PlaceDetectionApi.getCurrentPlace(googleApiClient, null);
-        PlaceLikelihoodBuffer placeLikelihoods = pResult.await();
-        for (PlaceLikelihood placeLikelihood : placeLikelihoods) {
-            Log.i("Place", String.format("Place '%s' has likelihood: %g",
-                    placeLikelihood.getPlace().getName(),
-                    placeLikelihood.getLikelihood()));
-            placeId[0] = placeLikelihood.getPlace().getId();
+        String placeId = "ChIJ0Ztx7bHLWEcRPrOH3qbNLlY";
+        try {
+            com.hadinour.hnweather.Service.Weather.Places places = placesInterface.getPlaces(location).execute().body();
+            if (places.results.size() > 0)
+                placeId = places.results.get(0).getPlace_id();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        placeLikelihoods.release();
-        return placeId[0];
+        return placeId;
+    }
+
+    List<android.location.Address> getAdresses(int counter, Geocoder gcd, Location location) {
+        //Geocoder sometimes returns null to addresses.
+        //so I made a counter with attempts to be more sure :).
+        int c = counter;
+        if (c == 3) return null;
+        List<android.location.Address> addresses = null;
+        try {
+            addresses = gcd.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (addresses == null) {
+            c++;
+            getAdresses(c, gcd, location);
+        }
+
+        return addresses;
     }
 }

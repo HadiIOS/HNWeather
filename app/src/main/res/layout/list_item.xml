@@ -4,6 +4,10 @@
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:minHeight="@dimen/_40sdp"
+    android:paddingRight="@dimen/_10sdp"
+    android:paddingLeft="@dimen/_10sdp"
     android:text="TEST TEST "
+    android:background="@color/White"
     android:gravity="center_vertical"
+    android:id="@+id/tvCitiesListITem"
     />

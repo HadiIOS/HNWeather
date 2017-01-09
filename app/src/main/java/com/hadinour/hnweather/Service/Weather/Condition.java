@@ -10,18 +10,18 @@ public class Condition {
     String temperature_string;
     float temp_f;
     float temp_c;
-    String relative_humidity;
+    String relative_humidity;//humidity
     String wind_string;
     String windchill_string;
     String windchill_f;
-    String windchill_c;
+    String windchill_c;//windchill
     String feelslike_string;
     String feelslike_f;
-    String feelslike_c;
-    String visibility_mi;
+    String feelslike_c;//weather
+    String visibility_mi; //visibility
     String visibility_km;
     String icon;
-    String icon_url;
+    String icon_url; //condition
 
     public String getObservation_time() {
         return observation_time;

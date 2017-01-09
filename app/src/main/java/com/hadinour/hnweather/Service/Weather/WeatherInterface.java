@@ -20,7 +20,7 @@ public interface WeatherInterface {
             @Path("latlong") String location
     );
 
-    static final Gson gson = new GsonBuilder()
+    final static Gson gson = new GsonBuilder()
             .setLenient()
             .create();
 
@@ -29,3 +29,4 @@ public interface WeatherInterface {
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build();
 }
+
